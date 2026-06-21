@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Content Fetcher</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        .row { display: flex; gap: 20px; }
+        @media (max-width: 768px) { .row { flex-direction: column; } }
+        .col { flex: 1; background: #f8f9fa; padding: 20px; border-radius: 10px; }
+        h2 { color: #555; margin-bottom: 15px; font-size: 18px; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 15px; }
+        .search-box input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .btn {
+            padding: 10px 20px; background: #667eea; color: white;
+            border: none; border-radius: 5px; cursor: pointer; font-size: 14px;
+        }
+        .btn:hover { background: #5a6fd6; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .list { list-style: none; max-height: 300px; overflow-y: auto; }
+        .list li {
+            padding: 10px; margin-bottom: 5px; background: white;
+            border: 1px solid #ddd; border-radius: 5px; cursor: pointer;
+        }
+        .list li:hover { border-color: #667eea; }
+        .list li.selected { border-color: #667eea; background: #eef0ff; }
+        .progress-box { margin-top: 15px; display: none; }
+        .progress-bar { width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #667eea; width: 0%; transition: width 0.3s; }
+        .progress-text { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; color: #666; }
+        .msg { padding: 10px; border-radius: 5px; margin-bottom: 10px; display: none; }
+        .msg-error { background: #fee; color: #c33; }
+        .msg-success { background: #efe; color: #3a3; }
+        .content-view { display: none; background: white; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto; margin-top: 15px; }
+        .content-view pre { white-space: pre-wrap; word-wrap: break-word; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Web Content Fetcher</h1>
+    <div class="row">
+        <div class="col">
+            <h2>Поиск</h2>
+            <div class="msg msg-error" id="errorMsg"></div>
+            <div class="msg msg-success" id="successMsg"></div>
+            <div class="search-box">
+                <input type="text" id="keywordInput" placeholder="Ключевое слово..." />
+                <button class="btn" onclick="searchContent()">Поиск</button>
+            </div>
+            <div id="urlListBox" style="display:none;">
+                <h3>Найденные URL:</h3>
+                <ul class="list" id="urlList"></ul>
+                <button class="btn" id="downloadBtn" onclick="downloadContent()" disabled>Скачать</button>
+            </div>
+            <div class="progress-box" id="progressBox">
+                <div class="progress-text">
+                    <span>Прогресс:</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text">
+                    <span>Размер: <span id="fileSize">0 KB</span></span>
+                    <span>Загружено: <span id="loadedSize">0 KB</span></span>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <h2>Сохраненное</h2>
+            <ul class="list" id="savedList"></ul>
+            <div class="content-view" id="contentView">
+                <h3 id="contentTitle"></h3>
+                <p style="font-size:12px;color:#666;" id="contentMeta"></p>
+                <hr>
+                <pre id="contentBody"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const SERVER_URL = 'http://localhost:3000';
+let selectedUrl = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateSavedList();
+});
+
+document.getElementById('keywordInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') searchContent();
+});
+
+async function searchContent() {
+    const keyword = document.getElementById('keywordInput').value.trim();
+    hideMessages();
+    if (!keyword) { showError('Введите ключевое слово'); return; }
+    try {
+        const res = await fetch(SERVER_URL + '/api/search?keyword=' + encodeURIComponent(keyword));
+        if (!res.ok) throw new Error('Ошибка сервера');
+        const data = await res.json();
+        if (data.urls.length === 0) {
+            showError('Ничего не найдено');
+            document.getElementById('urlListBox').style.display = 'none';
+            return;
+        }
+        showUrlList(data.urls);
+    } catch (e) {
+        showError('Ошибка: ' + e.message);
+    }
+}
+
+function showUrlList(urls) {
+    const box = document.getElementById('urlListBox');
+    const list = document.getElementById('urlList');
+    box.style.display = 'block';
+    list.innerHTML = '';
+    selectedUrl = null;
+    document.getElementById('downloadBtn').disabled = true;
+    urls.forEach(function(url) {
+        const li = document.createElement('li');
+        li.textContent = url;
+        li.onclick = function() {
+            document.querySelectorAll('#urlList li').forEach(function(el) { el.classList.remove('selected'); });
+            li.classList.add('selected');
+            selectedUrl = url;
+            document.getElementById('downloadBtn').disabled = false;
+        };
+        list.appendChild(li);
+    });
+}
+
+async function downloadContent() {
+    if (!selectedUrl) { showError('Выберите URL'); return; }
+    hideMessages();
+    const progressBox = document.getElementById('progressBox');
+    const progressFill = document.getElementById('progressFill');
+    const progressPercent = document.getElementById('progressPercent');
+    const fileSize = document.getElementById('fileSize');
+    const loadedSize = document.getElementById('loadedSize');
+    progressBox.style.display = 'block';
+    document.getElementById('downloadBtn').disabled = true;
+    try {
+        const res = await fetch(SERVER_URL + '/api/download?url=' + encodeURIComponent(selectedUrl));
+        if (!res.ok) throw new Error('Ошибка загрузки');
+        const total = parseInt(res.headers.get('Content-Length'));
+        if (!total) throw new Error('Размер неизвестен');
+        const reader = res.body.getReader();
+        let received = 0;
+        const chunks = [];
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+            const pct = Math.round((received / total) * 100);
+            progressFill.style.width = pct + '%';
+            progressPercent.textContent = pct + '%';
+            fileSize.textContent = formatBytes(total);
+            loadedSize.textContent = formatBytes(received);
+        }
+        const all = new Uint8Array(received);
+        let pos = 0;
+        chunks.forEach(function(chunk) { all.set(chunk, pos); pos += chunk.length; });
+        const content = new TextDecoder('utf-8').decode(all);
+        saveToStorage(selectedUrl, content, total);
+        showSuccess('Сохранено!');
+        updateSavedList();
+    } catch (e) {
+        showError('Ошибка: ' + e.message);
+    }
+    document.getElementById('downloadBtn').disabled = false;
+    setTimeout(function() { progressBox.style.display = 'none'; progressFill.style.width = '0%'; }, 2000);
+}
+
+function saveToStorage(url, content, size) {
+    const data = JSON.parse(localStorage.getItem('fetcher_data') || '[]');
+    data.unshift({
+        id: Date.now(),
+        url: url,
+        keyword: document.getElementById('keywordInput').value.trim(),
+        content: content.substring(0, 50000),
+        size: size,
+        time: new Date().toLocaleString()
+    });
+    if (data.length > 10) data.length = 10;
+    localStorage.setItem('fetcher_data', JSON.stringify(data));
+}
+
+function updateSavedList() {
+    const data = JSON.parse(localStorage.getItem('fetcher_data') || '[]');
+    const list = document.getElementById('savedList');
+    list.innerHTML = '';
+    if (data.length === 0) {
+        list.innerHTML = '<li>Нет сохраненного контента</li>';
+        return;
+    }
+    data.forEach(function(item) {
+        const li = document.createElement('li');
+        li.innerHTML = '<strong>' + (item.url.split('/').pop() || item.url) + '</strong><br><small>' + item.keyword + ' | ' + formatBytes(item.size) + ' | ' + item.time + '</small>';
+        li.onclick = function() { showContent(item.id); };
+        list.appendChild(li);
+    });
+}
+
+function showContent(id) {
+    const data = JSON.parse(localStorage.getItem('fetcher_data') || '[]');
+    const item = data.find(function(x) { return x.id === id; });
+    if (!item) return;
+    document.getElementById('contentView').style.display = 'block';
+    document.getElementById('contentTitle').textContent = item.url.split('/').pop() || item.url;
+    document.getElementById('contentMeta').textContent = 'URL: ' + item.url + ' | Размер: ' + formatBytes(item.size) + ' | ' + item.time;
+    document.getElementById('contentBody').textContent = item.content;
+}
+
+function formatBytes(bytes) {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+function showSuccess(msg) {
+    const el = document.getElementById('successMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(function() { el.style.display = 'none'; }, 3000);
+}
+function hideMessages() {
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'none';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "javascript": [
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
+    "https://javascript.info/"
+  ],
+  "python": [
+    "https://www.python.org/doc/",
+    "https://realpython.com/"
+  ],
+  "programming": [
+    "https://github.com/",
+    "https://stackoverflow.com/"
+  ],
+  "web": [
+    "https://www.w3.org/",
+    "https://developer.mozilla.org/"
+  ],
+  "database": [
+    "https://www.mongodb.com/docs/",
+    "https://www.postgresql.org/docs/"
+  ]
+}

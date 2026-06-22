@@ -1,22 +1,27 @@
 {
-  "javascript": [
-    "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
-    "https://javascript.info/"
+  "frontend": [
+    "https://vuejs.org",
+    "https://svelte.dev",
+    "https://uiverse.io"
   ],
-  "python": [
-    "https://www.python.org/doc/",
-    "https://realpython.com/"
+  "design": [
+    "https://w3schools.com",
+    "https://cornershop.io",
+    "https://adhamdannaway.com"
   ],
-  "programming": [
-    "https://github.com/",
-    "https://stackoverflow.com/"
+  "ai": [
+    "https://example.com",
+    "https://httpbin.org",
+    "https://loripsum.net"
   ],
-  "web": [
-    "https://www.w3.org/",
-    "https://developer.mozilla.org/"
+  "tools": [
+    "https://jestjs.io",
+    "https://playwright.dev",
+    "https://electronjs.org"
   ],
-  "database": [
-    "https://www.mongodb.com/docs/",
-    "https://www.postgresql.org/docs/"
+  "testing": [
+    "https://mochajs.org",
+    "https://github.io",
+    "https://testing-library.com"
   ]
 }

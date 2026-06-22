@@ -3,74 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Content Fetcher</title>
+    <title>fetch.it</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121214;
+            color: #e1e1e6;
             min-height: 100vh;
-            padding: 20px;
+            padding: 40px 20px;
+            line-height: 1.5;
         }
         .container {
-            max-width: 1000px;
+            max-width: 900px;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        h1 { text-align: center; color: #333; margin-bottom: 30px; }
-        .row { display: flex; gap: 20px; }
-        @media (max-width: 768px) { .row { flex-direction: column; } }
-        .col { flex: 1; background: #f8f9fa; padding: 20px; border-radius: 10px; }
-        h2 { color: #555; margin-bottom: 15px; font-size: 18px; }
-        .search-box { display: flex; gap: 10px; margin-bottom: 15px; }
-        .search-box input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        h1 { font-size: 24px; font-weight: 500; color: #ffffff; margin-bottom: 32px; letter-spacing: -0.5px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        @media (max-width: 768px) { .row { grid-template-columns: 1fr; gap: 32px; } }
+        .col { display: flex; flex-direction: column; }
+        h2 { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #7c7c8a; margin-bottom: 16px; }
+        .search-box { display: flex; gap: 8px; margin-bottom: 16px; }
+        .search-box input {
+            flex: 1; padding: 12px 16px; background: #202024; border: 1px solid #29292e;
+            border-radius: 6px; font-size: 14px; color: #ffffff; outline: none; transition: border-color 0.2s;
+        }
+        .search-box input:focus { border-color: #00b37e; }
         .btn {
-            padding: 10px 20px; background: #667eea; color: white;
-            border: none; border-radius: 5px; cursor: pointer; font-size: 14px;
+            padding: 12px 20px; background: #00b37e; color: #ffffff; border: none;
+            border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.2s;
         }
-        .btn:hover { background: #5a6fd6; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .list { list-style: none; max-height: 300px; overflow-y: auto; }
+        .btn:hover { background: #00875f; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; background: #29292e; color: #7c7c8a; }
+        .list { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
         .list li {
-            padding: 10px; margin-bottom: 5px; background: white;
-            border: 1px solid #ddd; border-radius: 5px; cursor: pointer;
+            padding: 12px 16px; background: #202024; border: 1px solid #29292e;
+            border-radius: 6px; cursor: pointer; font-size: 13px; color: #c4c4cc; transition: all 0.2s;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .list li:hover { border-color: #667eea; }
-        .list li.selected { border-color: #667eea; background: #eef0ff; }
-        .progress-box { margin-top: 15px; display: none; }
-        .progress-bar { width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #667eea; width: 0%; transition: width 0.3s; }
-        .progress-text { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; color: #666; }
-        .msg { padding: 10px; border-radius: 5px; margin-bottom: 10px; display: none; }
-        .msg-error { background: #fee; color: #c33; }
-        .msg-success { background: #efe; color: #3a3; }
-        .content-view { display: none; background: white; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto; margin-top: 15px; }
-        .content-view pre { white-space: pre-wrap; word-wrap: break-word; font-size: 12px; }
+        .list li:hover { border-color: #00b37e; color: #ffffff; }
+        .list li.selected { border-color: #00b37e; background: #126e5120; color: #ffffff; }
+        #downloadBtn { margin-top: 12px; width: 100%; background: #29292e; border: 1px solid #323238; }
+        #downloadBtn:not(:disabled):hover { background: #00b37e; border-color: #00b37e; }
+        .progress-box { margin-top: 20px; background: #202024; border: 1px solid #29292e; padding: 16px; border-radius: 6px; display: none; }
+        .progress-bar { width: 100%; height: 4px; background: #29292e; border-radius: 2px; overflow: hidden; margin: 12px 0; }
+        .progress-fill { height: 100%; background: #00b37e; width: 0%; transition: width 0.2s; }
+        .progress-text { display: flex; justify-content: space-between; font-size: 12px; color: #7c7c8a; }
+        .msg { padding: 12px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; display: none; border: 1px solid; }
+        .msg-error { background: #2c1a1a; color: #f75a68; border-color: #6a2424; }
+        .msg-success { background: #182219; color: #00b37e; border-color: #123824; }
+        .content-view { display: none; background: #202024; border: 1px solid #29292e; padding: 20px; border-radius: 6px; margin-top: 16px; }
+        .content-view h3 { font-size: 16px; color: #ffffff; margin-bottom: 4px; font-weight: 500; }
+        .content-view pre { white-space: pre-wrap; font-family: monospace; font-size: 13px; color: #c4c4cc; background: #121214; padding: 16px; border-radius: 4px; border: 1px solid #29292e; margin-top: 16px; max-height: 300px; overflow-y: auto; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>Web Content Fetcher</h1>
+    <h1>fetch.it</h1>
     <div class="row">
         <div class="col">
-            <h2>Поиск</h2>
+            <h2>Поиск контента</h2>
             <div class="msg msg-error" id="errorMsg"></div>
             <div class="msg msg-success" id="successMsg"></div>
             <div class="search-box">
                 <input type="text" id="keywordInput" placeholder="Ключевое слово..." />
-                <button class="btn" onclick="searchContent()">Поиск</button>
+                <button class="btn" onclick="searchContent()">Найти</button>
             </div>
-            <div id="urlListBox" style="display:none;">
-                <h3>Найденные URL:</h3>
+            <div id="urlListBox" style="display:none; margin-top: 8px;">
                 <ul class="list" id="urlList"></ul>
-                <button class="btn" id="downloadBtn" onclick="downloadContent()" disabled>Скачать</button>
+                <button class="btn" id="downloadBtn" onclick="downloadContent()" disabled>Скачать выбранный контент</button>
             </div>
             <div class="progress-box" id="progressBox">
                 <div class="progress-text">
-                    <span>Прогресс:</span>
+                    <span>Загрузка данных</span>
                     <span id="progressPercent">0%</span>
                 </div>
                 <div class="progress-bar">
@@ -78,23 +83,21 @@
                 </div>
                 <div class="progress-text">
                     <span>Размер: <span id="fileSize">0 KB</span></span>
-                    <span>Загружено: <span id="loadedSize">0 KB</span></span>
+                    <span>Получено: <span id="loadedSize">0 KB</span></span>
                 </div>
             </div>
         </div>
         <div class="col">
-            <h2>Сохраненное</h2>
+            <h2>История загрузок</h2>
             <ul class="list" id="savedList"></ul>
             <div class="content-view" id="contentView">
                 <h3 id="contentTitle"></h3>
-                <p style="font-size:12px;color:#666;" id="contentMeta"></p>
-                <hr>
+                <p style="font-size:12px; color:#7c7c8a;" id="contentMeta"></p>
                 <pre id="contentBody"></pre>
             </div>
         </div>
     </div>
 </div>
-
 <script>
 const SERVER_URL = '';
 let selectedUrl = null;
@@ -136,6 +139,7 @@ function showUrlList(urls) {
     urls.forEach(function(url) {
         const li = document.createElement('li');
         li.textContent = url;
+        li.title = url;
         li.onclick = function() {
             document.querySelectorAll('#urlList li').forEach(function(el) { el.classList.remove('selected'); });
             li.classList.add('selected');
@@ -180,7 +184,7 @@ async function downloadContent() {
         chunks.forEach(function(chunk) { all.set(chunk, pos); pos += chunk.length; });
         const content = new TextDecoder('utf-8').decode(all);
         saveToStorage(selectedUrl, content, total);
-        showSuccess('Сохранено!');
+        showSuccess('Успешно сохранено');
         updateSavedList();
     } catch (e) {
         showError('Ошибка: ' + e.message);
@@ -208,12 +212,13 @@ function updateSavedList() {
     const list = document.getElementById('savedList');
     list.innerHTML = '';
     if (data.length === 0) {
-        list.innerHTML = '<li>Нет сохраненного контента</li>';
+        list.innerHTML = '<li style="cursor:default; border-style:dashed;">История пуста</li>';
         return;
     }
     data.forEach(function(item) {
         const li = document.createElement('li');
-        li.innerHTML = '<strong>' + (item.url.split('/').pop() || item.url) + '</strong><br><small>' + item.keyword + ' | ' + formatBytes(item.size) + ' | ' + item.time + '</small>';
+        const name = item.url.split('/').pop() || item.url;
+        li.innerHTML = `<strong>${name}</strong><br><span style="font-size:11px; color:#7c7c8a;">${item.keyword} · ${formatBytes(item.size)}</span>`;
         li.onclick = function() { showContent(item.id); };
         list.appendChild(li);
     });
@@ -225,7 +230,7 @@ function showContent(id) {
     if (!item) return;
     document.getElementById('contentView').style.display = 'block';
     document.getElementById('contentTitle').textContent = item.url.split('/').pop() || item.url;
-    document.getElementById('contentMeta').textContent = 'URL: ' + item.url + ' | Размер: ' + formatBytes(item.size) + ' | ' + item.time;
+    document.getElementById('contentMeta').textContent = `${item.time} · Источник: ${item.url}`;
     document.getElementById('contentBody').textContent = item.content;
 }
 

@@ -1,15 +1,15 @@
-# Web Content Fetcher
+# Fetch.it
 
 ## Публичный доступ
 
-https://web-fetcher-adye.onrender.com
+https://fetch-it-6cbn.onrender.com
 
 ## Локальный запуск
 
 Требуется Node.js версии 14 или выше.
 
 ```bash
-git clone 
+git clone https://github.com/zfader313/fetch.it.git
 cd fetch.it/server
 npm install
 npm start
